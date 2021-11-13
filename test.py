@@ -1,0 +1,2 @@
+c = {'id': 100475653, 'code': '000.017.001.024.014.202', 'name': '软件L194班团支部', 'organize_type': '团支部', 'pid': 100014875, 'type': 1, 'parendName': '信息科学与工程学院团委', 'adminId': '434397', 'organize_type_id': 131}
+print(c['id'])

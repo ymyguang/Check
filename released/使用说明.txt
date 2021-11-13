@@ -1,0 +1,7 @@
+功能说明：查询大学习完成情况
+
+所需环境：安装Python3.8以上的计算机
+
+前期准备：修改”BigXuoXi.py“中的username和password内容（改成自己的账号密码）
+
+使用方法：运行”ClickMe.bat“文件
