@@ -1,4 +1,5 @@
 from datetime import datetime
+import datetime as da
 import re
 
 import requests
@@ -42,7 +43,8 @@ qq_dict = {
     "杨翔宇": 1950381153,
     "杨宇哲": 2212607441,
     "宇文可": 1625290298,
-    "章传喜": 2811165455
+    "章传喜": 2811165455,
+    "周超": 1000000000
 }
 
 
@@ -122,7 +124,7 @@ def feedback(text, case='M'):
 
 
 def originInfo():
-    url = 'https://bgapi.54heb.com/regiment?page=1&rows=100&keyword=&oid=' + oid
+    url = 'https://bgapi.54heb.com/regiment?page=1&rows=100&keyword=&oid=100475653&leagueStatus=&goHomeStatus=&memberCardStatus=&isPartyMember=&age_type=&ageOption=&isAll='
     header = {'Accept': 'application/json, text/plain, */*',
               'Accept-Encoding': 'gzip, deflate,br',
               'Accept-Language': 'zh-CN,zh;q=0.9',
@@ -150,8 +152,9 @@ def processInfo():
         message = "大学习已全部完成！"
     else:
         now = datetime.now()
-        current_time = now.strftime("%m月%d日 %H点%M分%S秒")
-        message = "截止至【{}】，本期大学习完成情况:\n".format(current_time)
+        now = now - da.timedelta(hours=2)
+        current_time = now.strftime("%m月%d日 %H时")
+        message = "截止至[{}]，本期大学习完成情况:\n".format(current_time)
         temp = "已完成人数：" + str(total - len(l)) + "人，还剩{}人未完成（无记录）\n当前完成率：{}%  \n".format(
             len(l), str((total - len(l)) / total * 100)[:2])
         message += temp + "\n以下是未完成（无记录）名单：\n"
@@ -169,9 +172,9 @@ def processInfo():
         else:
             for ii in l:
                 message += " @at={}@ ".format(qq_dict[ii])
+        # feedback(message, "G")
 
     print(message)
-    # feedback(message, "G")
 
 
 if __name__ == '__main__':

@@ -7,6 +7,7 @@ import ddddocr
 username = "2096304869@qq.com"
 password = "beff06"
 
+
 # -----------------下方代码非必要时，无需更改！-----------------
 l = []
 total = None
