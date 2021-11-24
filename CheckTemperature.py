@@ -1,7 +1,6 @@
 import datetime
-import time
 import urllib.parse
-
+from datetime import datetime as da
 import ddddocr
 import requests
 from bs4 import BeautifulSoup
@@ -42,7 +41,7 @@ qq_dict = {
     "徐雪彬": 2417933635,
     "杨翔宇": 1950381153,
     "杨宇哲": 2212607441,
-    "宇文可": 1625290298,
+    "宇文可豪": 1625290298,
     "章传喜": 2811165455,
     "周超": 1000000000
 }
@@ -127,17 +126,30 @@ def getUrl():
     return url
 
 
+def getId():
+    c = requests.get("http://xscfw.hebust.edu.cn/evaluate/survey/surveyList", headers=header).text
+    soup = BeautifulSoup(c, 'html.parser')
+    now = da.now()
+    current_time = now.strftime("%Y年%m月%d日健康日报")
+    for tr in soup.findAll('tbody')[0].findAll('tr'):
+        res = tr.a
+        if current_time == res['title']:
+            Lid = res['href']
+            print(res['title'], "->", Lid)
+            return 'http://xscfw.hebust.edu.cn/evaluate/survey/' + Lid
+
+
 # 登陆成功后（cookie生效）获取原始信息
 def getInfo(page):
     # 初始化参数
     global maxPage
     # 构造请求
     params = {
-        "typeCX": 0,
+        "typeCX": 0,  # 未完成0，已完成1
         "pageNo": page,
-        "classCX": "软件L194"
+        "classCX": "软件L194"  # 班级号
     }
-    c = requests.post(url=getUrl(), params=params, headers=header).text
+    c = requests.post(url=getId(), params=params, headers=header).text
 
     # 获取maxPage数据
     index = str(c).find("maxPage")
@@ -169,9 +181,9 @@ def process(index):
     target = getInfo(index)
     try:
         soup = BeautifulSoup(target, 'html.parser')
+        if soup.tbody is None:
+            return
         t = soup.tbody.get_text()
-        # if t is None:
-        #     return
         tt = str(t).split("未完成")
         tt.pop()
 
@@ -184,21 +196,26 @@ def process(index):
 
 
 def generateMess():
-    message = "以下同学赶紧填体温！！！\n"
+    if len(set_name) == 0:
+        return
+    message = ""
     for e in set_name:
-        message += e + "\n"
-
+        message += e + "  "
+    message += "\n赶紧填体温！\n"
     for ee in set_name:
         message += " @at={}@ ".format(qq_dict[ee])
     feedback(message, "G")
-    # print(message)
 
 
 if __name__ == '__main__':
+    print("\n")
+    print(da.now())
+    print("------------------------------------------------")
     login()
     for i in range(1, 100):
-        print("-------------------")
+        print("################################################")
         process(i)
         if i == maxPage or maxPage == 0:
             break
     generateMess()
+    print("------------------------------------------------")

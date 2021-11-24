@@ -42,7 +42,7 @@ qq_dict = {
     "徐雪彬": 2417933635,
     "杨翔宇": 1950381153,
     "杨宇哲": 2212607441,
-    "宇文可": 1625290298,
+    "宇文可豪": 1625290298,
     "章传喜": 2811165455,
     "周超": 1000000000
 }
@@ -92,7 +92,6 @@ def feedback(text, case='M'):
         "G": 1042333099
         # 以下是宿舍
         # "G": 708227196
-
     }
 
     way = {
@@ -107,20 +106,45 @@ def feedback(text, case='M'):
         "msg": text,
         "qq": qq[case],
     }
-
     # QQ推送
     url = "https://qmsg.zendee.cn/" + way[case] + "/d105a92ecd34dab1427db4dc4936e339"
     c = requests.get(url=url, params=params1)
+    # print(printLog.get_time("feedback"), "推送目标QQ:{}".format(str(qq[case])))
     status = c.json()['success']
-    print(status)
+    # print(printLog.get_time("feedback"), "QQ推送状态：{},详情：{}".format(c.json()['success'], c.json()['reason']))
+    print(status, c.json()['reason'])
 
+    # QQ推送失败
     if status is False:
         # coolPush推送
-        # print(printLog.get_time("feedback"), "QQ推送失败，进入coolPush推送")
-        text += "\nQQ推送失败！"
+        print("QQ推送失败，进入coolPush推送")
         t = requests.post("https://push.xuthus.cc/ww/ce4e2dfe9a211ca36f718441f089a88c", data=text.encode("utf-8"))
         status = t.json()['message']
-        print(status)
+        flag = str(status).find("等待执行")
+
+        # coolPush推送失败
+        if flag == -1:
+
+            # server酱推送
+            print("coolPush推送失败 -> 当前已进入Server酱推送")
+            params = {
+                "title": text,
+            }
+            s = requests.get(url="https://sctapi.ftqq.com/SCT33679Td3sATvBjES3VjKQeZgcsbxeB.send", params=params)
+            print(s.json()['message'])
+
+            # Server酱推送失败
+            if str(s.json()['message']).find("超过当天的发") != -1:
+                # 最后推送
+                print("Server酱推送失败，执行最后coolPush推送")
+                t = requests.post("https://push.xuthus.cc/ww/ce4e2dfe9a211ca36f718441f089a88c",
+                                  data=text.encode("utf-8"))
+                status = t.json()['message']
+                print("coolPush推送状态（最终状态）:", status)
+        else:
+            print("coolPush通道推送成功")
+    else:
+        print("QQ通道推送成功")
 
 
 def originInfo():
@@ -134,7 +158,7 @@ def originInfo():
               }
 
     soup = requests.get(url, headers=header)
-    print(soup.json())
+    # print(soup.json())
     if soup.json()['msg'] != 'success':
         print(soup.json()['msg'])
         feedback(soup.json()['msg'])
@@ -149,15 +173,13 @@ def originInfo():
 
 def processInfo():
     if len(l) == 0:
-        message = "大学习已全部完成！"
+        print("大学习已全部完成！")
     else:
         now = datetime.now()
-        now = now - da.timedelta(hours=2)
-        current_time = now.strftime("%m月%d日 %H时")
-        message = "截止至[{}]，本期大学习完成情况:\n".format(current_time)
-        temp = "已完成人数：" + str(total - len(l)) + "人，还剩{}人未完成（无记录）\n当前完成率：{}%  \n".format(
-            len(l), str((total - len(l)) / total * 100)[:2])
-        message += temp + "\n以下是未完成（无记录）名单：\n"
+        # now = now - da.timedelta(hours=2)
+        current_time = now.strftime("%m月%d日 %H时%M分")
+        message = "截止至[{}]".format(current_time)
+        message += "\n大学习未完成（无记录）名单：\n"
         conut = 0
         for i in l:
             conut += 1
@@ -167,16 +189,15 @@ def processInfo():
             str(conut))
 
         # At people
-        if len(l) > 10:
-            message += "因未完成人数较多，故->" + "@at=-1@" + "请大家相互提醒！保证在周三上午12点之前完成！！！"
-        else:
-            for ii in l:
-                message += " @at={}@ ".format(qq_dict[ii])
-        # feedback(message, "G")
-
-    print(message)
+        for ii in l:
+            message += " @at={}@ ".format(qq_dict[ii])
+        feedback(message, "G")
 
 
 if __name__ == '__main__':
+    print("\n")
+    print(datetime.now())
+    print("------------------------------------------------")
     originInfo()
     processInfo()
+    print("------------------------------------------------")
