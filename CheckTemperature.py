@@ -1,6 +1,9 @@
 import datetime
 import urllib.parse
 from datetime import datetime as da
+import time
+from math import ceil
+
 import ddddocr
 import requests
 from bs4 import BeautifulSoup
@@ -61,9 +64,9 @@ header = {
 def feedback(text, case='M'):
     qq = {
         'M': 2096304869,
-        "G": 1042333099
+        # "G": 1042333099
         # 以下是宿舍
-        # "G": 708227196
+        "G": 708227196
 
     }
 
@@ -85,6 +88,7 @@ def feedback(text, case='M'):
     c = requests.get(url=url, params=params1)
     status = c.json()['success']
     print(status)
+    print(c.json())
 
     if status is False:
         # coolPush推送
@@ -196,26 +200,48 @@ def process(index):
 
 
 def generateMess():
-    if len(set_name) == 0:
+    pageNum = 8
+    f = 0
+    if len(set_name) == pageNum:
         return
-    message = ""
+    message = "赶紧填体温！\n"
+    totalPage = str(ceil(len(set_name) / pageNum))
+    currentPage = 1
     for e in set_name:
-        message += e + "  "
-    message += "\n赶紧填体温！\n"
-    for ee in set_name:
-        message += " @at={}@ ".format(qq_dict[ee])
-    feedback(message, "G")
+        f += 1
+        message += e + " "
+        message += " @at={}@ \n".format(qq_dict[e])
+        if f % pageNum == 0:
+            message += "【第{}页，共{}页】".format(str(currentPage), totalPage)
+            currentPage += 1
+            feedback(message, "G")
+            message = "赶紧填体温！\n"
+            time.sleep(6)
+    if f % pageNum != 0:
+        message += "【第{}页，共{}页】".format(str(currentPage), totalPage)
+        feedback(message, "G")
 
 
 if __name__ == '__main__':
-    print("\n")
-    print(da.now())
-    print("------------------------------------------------")
-    login()
-    for i in range(1, 100):
-        print("################################################")
-        process(i)
-        if i == maxPage or maxPage == 0:
+    # print("\n")
+    # print(da.now())
+    # print("------------------------------------------------")
+    # login()
+    # for i in range(1, 100):
+    #     print("################################################")
+    #     process(i)
+    #     if i == maxPage or maxPage == 0:
+    #         break
+    # generateMess()
+    # print("------------------------------------------------")
+    # for i in range(8):
+    i = 0
+    for e in qq_dict:
+        i += 1
+        if i > 17:
             break
+        else:
+            set_name.add(e)
+    print(len(set_name))
+    print(set_name)
     generateMess()
-    print("------------------------------------------------")
