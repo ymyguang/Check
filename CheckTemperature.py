@@ -61,42 +61,61 @@ header = {
 }
 
 
-def feedback(text, case='M'):
+def push_QQ(text, case):
+    # -1是请求异常
+    # false是推送异常
+    print("-- 进入QmsgPUSH --")
+
     qq = {
         'M': 2096304869,
-        # "G": 1042333099
+        "G": 1042333099
         # 以下是宿舍
-        "G": 708227196
-
+        # "G": 708227196
     }
-
     way = {
         "M": "send",
         "G": "group"
     }
-
-    text = str(text)
-    print("->【", text + ' 】')
-    # return
     params1 = {
         "msg": text,
         "qq": qq[case],
     }
-
-    # QQ推送
     url = "https://qmsg.zendee.cn/" + way[case] + "/d105a92ecd34dab1427db4dc4936e339"
-    c = requests.get(url=url, params=params1)
-    status = c.json()['success']
-    print(status)
-    print(c.json())
 
-    if status is False:
-        # coolPush推送
-        # print(printLog.get_time("feedback"), "QQ推送失败，进入coolPush推送")
-        text += "\nQQ推送失败！"
-        t = requests.post("https://push.xuthus.cc/ww/ce4e2dfe9a211ca36f718441f089a88c", data=text.encode("utf-8"))
-        status = t.json()['message']
+    try:
+        c = requests.get(url=url, params=params1)
+        status = c.json()['success']
         print(status)
+        return status, c.text
+    except Exception as e:
+        print(e)
+        return -1, e
+
+
+def weChatPush(text, e):
+    print("-- 进入WeCharPUSH --")
+    text = "QQ推送失败\n" + "异常信息：" + str(e) + "\n" + text
+    text = str(text)
+    t = requests.post("https://push.xuthus.cc/ww/ce4e2dfe9a211ca36f718441f089a88c", data=text.encode("utf-8"))
+    status = t.json()['message']
+    print(status)
+
+
+def feedback(text, case='M'):
+    print("->【", text + ' 】')
+    flag = False
+    qq_status, e = push_QQ(text, case)
+    if qq_status == -1:
+        print("请求失败---Qmsg服务器异常")
+        flag = True
+    elif qq_status is False:
+        print("推送失败，进入coolPush推送")
+        flag = True
+    else:
+        print("QQ推送成功")
+
+    if flag:
+        weChatPush(text, e)
 
 
 # 获取cookie和验证码
@@ -200,48 +219,48 @@ def process(index):
 
 
 def generateMess():
-    pageNum = 8
+    pageNum = 8  # at的总个数
     f = 0
     if len(set_name) == pageNum:
         return
-    message = "赶紧填体温！\n"
+    message = "叮叮叮，赶紧填体温📣📣📣 \n"
     totalPage = str(ceil(len(set_name) / pageNum))
     currentPage = 1
     for e in set_name:
-        f += 1
+        f += 1  # 记录本次推送at的个数
         message += e + " "
         message += " @at={}@ \n".format(qq_dict[e])
-        if f % pageNum == 0:
-            message += "【第{}页，共{}页】".format(str(currentPage), totalPage)
+        if f % pageNum == 0:  # 满足一页的个数，就推送
+            message += "\n🌻🌻【第{}页，共{}页】🌻🌻".format(str(currentPage), totalPage)
             currentPage += 1
             feedback(message, "G")
-            message = "赶紧填体温！\n"
-            time.sleep(6)
-    if f % pageNum != 0:
-        message += "【第{}页，共{}页】".format(str(currentPage), totalPage)
+            message = '叮叮叮，赶紧填体温📣📣📣 \n'
+            time.sleep(6)  # 5秒内不能连续推送
+    if f % pageNum != 0:  # 不是pageNum倍数的情况
+        message += "\n🌻🌻【第{}页，共{}页】🌻🌻".format(str(currentPage), totalPage)
         feedback(message, "G")
 
 
 if __name__ == '__main__':
-    # print("\n")
-    # print(da.now())
-    # print("------------------------------------------------")
-    # login()
-    # for i in range(1, 100):
-    #     print("################################################")
-    #     process(i)
-    #     if i == maxPage or maxPage == 0:
-    #         break
-    # generateMess()
-    # print("------------------------------------------------")
-    # for i in range(8):
-    i = 0
-    for e in qq_dict:
-        i += 1
-        if i > 17:
+    print("\n")
+    print(da.now())
+    print("------------------------------------------------")
+    login()
+    for i in range(1, 100):
+        print("################################################")
+        process(i)
+        if i == maxPage or maxPage == 0:
             break
-        else:
-            set_name.add(e)
-    print(len(set_name))
-    print(set_name)
     generateMess()
+    print("------------------------------------------------")
+
+    # i = 0
+    # for e in qq_dict:
+    #     i += 1
+    #     if i > 13:
+    #         break
+    #     else:
+    #         set_name.add(e)
+    # print(len(set_name))
+    # print(set_name)
+    # generateMess()
