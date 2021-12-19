@@ -6,7 +6,7 @@ import requests
 import ddddocr
 
 l = []
-
+s = set()
 total = 35
 qq_dict = {
     "曹骏": 3137136096,
@@ -45,6 +45,61 @@ qq_dict = {
     "宇文可豪": 1625290298,
     "章传喜": 2811165455,
     "周超": 1000000000
+}
+
+Leader = {
+    '李晨': [
+        "康兴旺",
+        "刘彪",
+        "李晨",
+        "李樊",
+        "刘明一",
+        "杨翔宇"
+    ],
+    "张稳": [
+        "张稳",
+        "赵伟",
+        "章传喜",
+        "曹骏",
+        "郭楠",
+    ],
+    '苏世超': [
+        "苏世超",
+        "刘旭辉",
+        "李佳林",
+    ],
+    "揣星宇": [
+        "揣星宇",
+        "郝梦畅",
+        "李可欣",
+    ],
+    "邢梓阳": [
+        "邢梓阳",
+        "王鑫",
+        "徐晓杰",
+        "徐雪彬",
+        "王湜裕",
+        "杨宇哲",
+
+    ],
+    "罗琦": [
+        "罗琦",
+        "李兆林",
+        "李昂",
+        "刘善宝",
+        "吕天乐",
+        "李江楠",
+    ],
+    "蔡思琦": [
+        "辛宇航",
+        "蔡思琦",
+        "吴卫",
+        "高世豪",
+        "宇文可豪"
+    ],
+    "李尚恒": [
+        "李尚恒",
+    ]
 }
 
 
@@ -86,65 +141,63 @@ def getToken():
     return c.json()['data'][0]["token"]
 
 
-def feedback(text, case='M'):
+def push_QQ(text, case):
+    # -1是请求异常
+    # false是推送异常
+    print("-- 进入QmsgPUSH --")
+
     qq = {
         'M': 2096304869,
         "G": 1042333099
         # 以下是宿舍
         # "G": 708227196
     }
-
     way = {
         "M": "send",
         "G": "group"
     }
-
-    text = str(text)
-    print("->【", text + ' 】')
-    # return
     params1 = {
         "msg": text,
         "qq": qq[case],
     }
-    # QQ推送
     url = "https://qmsg.zendee.cn/" + way[case] + "/d105a92ecd34dab1427db4dc4936e339"
-    c = requests.get(url=url, params=params1)
-    # print(printLog.get_time("feedback"), "推送目标QQ:{}".format(str(qq[case])))
-    status = c.json()['success']
-    # print(printLog.get_time("feedback"), "QQ推送状态：{},详情：{}".format(c.json()['success'], c.json()['reason']))
-    print(status, c.json()['reason'])
 
-    # QQ推送失败
-    if status is False:
-        # coolPush推送
-        print("QQ推送失败，进入coolPush推送")
-        t = requests.post("https://push.xuthus.cc/ww/ce4e2dfe9a211ca36f718441f089a88c", data=text.encode("utf-8"))
-        status = t.json()['message']
-        flag = str(status).find("等待执行")
+    try:
+        c = requests.get(url=url, params=params1)
+        status = c.json()['success']
+        print(status)
+        return status, c.text
+    except Exception as e:
+        print(e)
+        return -1, e
 
-        # coolPush推送失败
-        if flag == -1:
 
-            # server酱推送
-            print("coolPush推送失败 -> 当前已进入Server酱推送")
-            params = {
-                "title": text,
-            }
-            s = requests.get(url="https://sctapi.ftqq.com/SCT33679Td3sATvBjES3VjKQeZgcsbxeB.send", params=params)
-            print(s.json()['message'])
+def weChatPush(text, e):
+    print("-- 进入WeCharPUSH --")
+    text = "QQ推送失败\n" + "异常信息：" + str(e) + "\n" + text
+    text = str(text)
+    t = requests.post("https://push.xuthus.cc/ww/ce4e2dfe9a211ca36f718441f089a88c", data=text.encode("utf-8"))
+    status = t.json()['message']
+    print(status)
 
-            # Server酱推送失败
-            if str(s.json()['message']).find("超过当天的发") != -1:
-                # 最后推送
-                print("Server酱推送失败，执行最后coolPush推送")
-                t = requests.post("https://push.xuthus.cc/ww/ce4e2dfe9a211ca36f718441f089a88c",
-                                  data=text.encode("utf-8"))
-                status = t.json()['message']
-                print("coolPush推送状态（最终状态）:", status)
-        else:
-            print("coolPush通道推送成功")
+
+def feedback(text, case='M'):
+    print("->【", text + ' 】')
+    flag = False
+    # return
+    # text = "[测试]\n" + text
+    qq_status, e = push_QQ(text, case)
+    if qq_status == -1:
+        print("请求失败---Qmsg服务器异常")
+        flag = True
+    elif qq_status is False:
+        print("推送失败，进入coolPush推送")
+        flag = True
     else:
-        print("QQ通道推送成功")
+        print("QQ推送成功")
+
+    if flag:
+        weChatPush(text, e)
 
 
 def originInfo():
@@ -189,8 +242,15 @@ def processInfo():
             str(conut))
 
         # At people
-        for ii in l:
+        for people in l:
+            for leader in Leader:
+                if people in leader:
+                    s.add(leader)
+                    print(leader)
+
+        for ii in s:
             message += " @at={}@ ".format(qq_dict[ii])
+        message += "\n请宿舍长们及时督促！"
         feedback(message, "G")
 
 
