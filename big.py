@@ -5,7 +5,6 @@ import requests
 import ddddocr
 
 l = []
-s = set()
 total = 35
 qq_dict = {
     "曹骏": 3137136096,
@@ -132,10 +131,6 @@ def getVerify(r):
     return res
 
 
-def comp(e):
-    return e['index']
-
-
 def getToken():
     status = "aa"
     c = None
@@ -251,28 +246,52 @@ def originInfo():
                 l.append(sa['realname'])
 
 
+def compLen(e):
+    return e['len']
+
+
+def bestAndWorse(content):
+    content.sort(key=compLen)
+    member_len = len(content)
+    best = ""
+    worse = ""
+    if member_len == 1:
+        result = "唯一一个没有完成的宿舍:" + content[0]['leader']
+    else:
+        if content[-1]['len'] != content[-2]['len']:
+            best = "完成最少的：" + content[-1]['leader']
+        if content[0]['len'] != content[1]['len']:
+            worse = "完成最多的：" + content[0]['leader']
+        result = best + "\n" + worse
+    return result
+
+
 def processInfo():
     if len(l) == 0:
         print("大学习已全部完成！")
     else:
-        now = datetime.now()
-        # now = now - da.timedelta(hours=2)
-        current_time = now.strftime("%m月%d日 %H时%M分")
-        message = "截止至[{}]".format(current_time)
-        message += "\n大学习未完成（无记录）名单：\n-----------------------\n"
-
-        # At people
+        # 构造消息内容
         content = []
         for leader in Leader:
-            info = {'leader': leader, 'index': str(Leader.get(str(leader))[-1]['number']), "member": []}
+            non_ok = 0
+            info = {'len': 0, 'leader': leader, 'index': str(Leader.get(str(leader))[-1]['number']), "member": []}
             for people in l:
                 if people in Leader.get(leader):
                     info['member'].append(people)
+                    non_ok += 1
             if len(info['member']) != 0:
+                info['len'] = non_ok  # 没有完成的人数
                 content.append(info)
+        print(content)
 
-        content.sort(key=comp)
+        now = datetime.now()
+        current_time = now.strftime("%m月%d日 %H时%M分")
+        message = "截止至[{}]".format(current_time)
+        message += "\n大学习未完成（无记录）名单：\n-----------------------\n"
+        content.sort(key=compLen)
         member = ""
+        # return
+
         # 生成名单
         for i in content:
             member += "【" + str(i.get('index')) + "】宿舍长:" + i.get("leader") + "\n"
@@ -281,10 +300,9 @@ def processInfo():
 
             member += " @at={}@ ".format(
                 qq_dict[str(i.get('leader'))]) + "\n\n"
-        # print(member)
         message += member
-        message += "共计{}个\n-----------------------\n".format(len(l))
-        message += "请宿舍长们及时督促！"
+        message += "共计{}个\n".format(len(l))
+        message += "-----------------------\n请宿舍长们及时督促！"
         feedback(message, "G")
 
 
