@@ -1,7 +1,6 @@
 from datetime import datetime
 import datetime as da
 import re
-
 import requests
 import ddddocr
 
@@ -54,7 +53,10 @@ Leader = {
         "李晨",
         "李樊",
         "刘明一",
-        "杨翔宇"
+        "杨翔宇",
+        {
+            "number": '14A212'
+        }
     ],
     "张稳": [
         "张稳",
@@ -62,16 +64,25 @@ Leader = {
         "章传喜",
         "曹骏",
         "郭楠",
+        {
+            "number": '14A215'
+        }
     ],
     '苏世超': [
         "苏世超",
         "刘旭辉",
         "李佳林",
+        {
+            "number": '14A214'
+        }
     ],
     "揣星宇": [
         "揣星宇",
         "郝梦畅",
         "李可欣",
+        {
+            "number": "10A424"
+        }
     ],
     "邢梓阳": [
         "邢梓阳",
@@ -80,6 +91,9 @@ Leader = {
         "徐雪彬",
         "王湜裕",
         "杨宇哲",
+        {
+            "number": '14A218'
+        }
 
     ],
     "罗琦": [
@@ -89,16 +103,25 @@ Leader = {
         "刘善宝",
         "吕天乐",
         "李江楠",
+        {
+            "number": '14A217'
+        }
     ],
     "蔡思琦": [
         "辛宇航",
         "蔡思琦",
         "吴卫",
         "高世豪",
-        "宇文可豪"
+        "宇文可豪",
+        {
+            "number": '14A213'
+        }
     ],
     "李尚恒": [
         "李尚恒",
+        {
+            "number": '13B620'
+        }
     ]
 }
 
@@ -107,6 +130,10 @@ def getVerify(r):
     ocr = ddddocr.DdddOcr()
     res = ocr.classification(r.content)
     return res
+
+
+def comp(e):
+    return e['index']
 
 
 def getToken():
@@ -232,32 +259,39 @@ def processInfo():
         # now = now - da.timedelta(hours=2)
         current_time = now.strftime("%m月%d日 %H时%M分")
         message = "截止至[{}]".format(current_time)
-        message += "\n大学习未完成（无记录）名单：\n"
-        conut = 0
-        for i in l:
-            conut += 1
-            message += str(conut) + "." + i + "\n"
-
-        message += "\n请以上{}位同学抓紧（重新）学习！\n".format(
-            str(conut))
+        message += "\n大学习未完成（无记录）名单：\n-----------------------\n"
 
         # At people
-        for people in l:
-            for leader in Leader:
-                if people in leader:
-                    s.add(leader)
-                    print(leader)
+        content = []
+        for leader in Leader:
+            info = {'leader': leader, 'index': str(Leader.get(str(leader))[-1]['number']), "member": []}
+            for people in l:
+                if people in Leader.get(leader):
+                    info['member'].append(people)
+            if len(info['member']) != 0:
+                content.append(info)
 
-        for ii in s:
-            message += " @at={}@ ".format(qq_dict[ii])
-        message += "\n请宿舍长们及时督促！"
+        content.sort(key=comp)
+        member = ""
+        # 生成名单
+        for i in content:
+            member += "【" + str(i.get('index')) + "】宿舍长:" + i.get("leader") + "\n"
+            for r in i.get('member'):
+                member += "->" + r + "\n"
+
+            member += " @at={}@ ".format(
+                qq_dict[str(i.get('leader'))]) + "\n\n"
+        # print(member)
+        message += member
+        message += "共计{}个\n-----------------------\n".format(len(l))
+        message += "请宿舍长们及时督促！"
         feedback(message, "G")
 
 
 if __name__ == '__main__':
     print("\n")
     print(datetime.now())
-    print("------------------------------------------------")
+    print("-------------------------------------------------")
     originInfo()
     processInfo()
     print("------------------------------------------------")
