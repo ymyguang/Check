@@ -1,54 +1,13 @@
 from datetime import datetime
-import datetime as da
 import re
 import requests
 import ddddocr
-import feedback
+from function import properties, feedback, recall
 
-
-targetQQ = 708227196
-targetQQ = str(targetQQ)
+targetQQ = properties.targetQQ
 
 l = []
 total = 35
-qq_dict = {
-    "曹骏": 3137136096,
-    "郭楠": 2690681751,
-    "李昂": 1340170910,
-    "李晨": 591487622,
-    "李樊": 3029198839,
-    "刘彪": 2096304869,
-    "罗琦": 2502013244,
-    "王鑫": 2248278179,
-    "吴卫": 1473908028,
-    "张稳": 1548720908,
-    "赵伟": 2392965199,
-    "蔡思琦": 1656909554,
-    "揣星宇": 2086798102,
-    "高世豪": 498661819,
-    "郝梦畅": 1208067561,
-    "康兴旺": 2315143636,
-    "李佳林": 1306791767,
-    "李江楠": 1009740561,
-    "李可欣": 1092896132,
-    "李尚恒": 1332250851,
-    "李兆林": 2697951507,
-    "刘明一": 1351244826,
-    "刘善宝": 1395896975,
-    "刘旭辉": 775373008,
-    "吕天乐": 747920501,
-    "苏世超": 292301843,
-    "王湜裕": 835017638,
-    "辛宇航": 953725247,
-    "邢梓阳": 2209906415,
-    "徐晓杰": 2817605916,
-    "徐雪彬": 2417933635,
-    "杨翔宇": 1950381153,
-    "杨宇哲": 2212607441,
-    "宇文可豪": 1625290298,
-    "章传喜": 2811165455,
-    "周超": 1000000000
-}
 Leader = {
     '李晨': [
         "康兴旺",
@@ -127,7 +86,7 @@ Leader = {
         }
     ]
 }
-
+qq_dict = properties.qq_dict
 
 def getVerify(r):
     ocr = ddddocr.DdddOcr()
@@ -160,10 +119,12 @@ def getToken():
         }
         verify = getVerify(r)
         par = {"account": "2096304869@qq.com", "pass": "beff06", "verify": verify, "is_quick": 0}
-        c = requests.post("https://bgapi.54heb.com/admin/login", headers=header, params=par)
-        status = c.json()['msg']
-        f = True
-
+        try:
+            c = requests.post("https://bgapi.54heb.com/admin/login", headers=header, params=par)
+            status = c.json()['msg']
+            f = True
+        except Exception as e:
+            print(e)
     return c.json()['data'][0]["token"]
 
 
@@ -248,6 +209,7 @@ def processInfo():
         message += member
         message += "共计{}个\n".format(len(l))
         message += "-----------------------\n请宿舍长们及时督促！"
+        recall.action()
         feedback.feedback(message, "G", qq=targetQQ)
 
 

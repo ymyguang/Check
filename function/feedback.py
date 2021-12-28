@@ -1,10 +1,11 @@
 import requests
+from function import properties
 
-IP = "http://192.168.80.130:5700"
-
-
+IP = properties.IP
+path = properties.filepath
 def myPush(text, qq, case):
-    url = IP + "/send_group_msg?group_id=" + str(qq) + "&message=" + str(text)
+    s = text.replace(" @at=", "[CQ:at,qq=").replace("@", "]")
+    url = IP + "/send_group_msg?group_id=" + str(qq) + "&message=" + str(s)
     try:
         a = requests.post(url=url)
         result = a.json()
@@ -13,7 +14,7 @@ def myPush(text, qq, case):
         message_id = result['data']['message_id']
         message_id = str(message_id)
         if case == "G":
-            with open("message_id.ini", 'a') as file:
+            with open(path, 'a') as file:
                 file.write(message_id + "\n")
         print("message_id:" + message_id)
         return status
@@ -23,24 +24,22 @@ def myPush(text, qq, case):
         return -1, e
 
 
-def push_QQ(text, case):
+def push_QQ(text, case, qq_o):
     # -1是请求异常
     # false是推送异常
     print("-- 进入QmsgPUSH --")
+    if case == "M":
+        qq = 2096304869
+    else:
+        qq = qq_o
 
-    qq = {
-        'M': 2096304869,
-        # "G": 1042333099
-        # 以下是宿舍
-        "G": 708227196
-    }
     way = {
         "M": "send",
         "G": "group"
     }
     params1 = {
         "msg": text,
-        "qq": qq[case],
+        "qq": qq,
     }
     url = "https://qmsg.zendee.cn/" + way[case] + "/d105a92ecd34dab1427db4dc4936e339"
 
