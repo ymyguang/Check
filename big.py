@@ -3,6 +3,11 @@ import datetime as da
 import re
 import requests
 import ddddocr
+import feedback
+
+
+targetQQ = 708227196
+targetQQ = str(targetQQ)
 
 l = []
 total = 35
@@ -44,7 +49,6 @@ qq_dict = {
     "章传喜": 2811165455,
     "周超": 1000000000
 }
-
 Leader = {
     '李晨': [
         "康兴旺",
@@ -163,65 +167,6 @@ def getToken():
     return c.json()['data'][0]["token"]
 
 
-def push_QQ(text, case):
-    # -1是请求异常
-    # false是推送异常
-    print("-- 进入QmsgPUSH --")
-
-    qq = {
-        'M': 2096304869,
-        "G": 1042333099
-        # 以下是宿舍
-        # "G": 708227196
-    }
-    way = {
-        "M": "send",
-        "G": "group"
-    }
-    params1 = {
-        "msg": text,
-        "qq": qq[case],
-    }
-    url = "https://qmsg.zendee.cn/" + way[case] + "/d105a92ecd34dab1427db4dc4936e339"
-
-    try:
-        c = requests.get(url=url, params=params1)
-        status = c.json()['success']
-        print(status)
-        return status, c.text
-    except Exception as e:
-        print(e)
-        return -1, e
-
-
-def weChatPush(text, e):
-    print("-- 进入WeCharPUSH --")
-    text = "QQ推送失败\n" + "异常信息：" + str(e) + "\n" + text
-    text = str(text)
-    t = requests.post("https://push.xuthus.cc/ww/ce4e2dfe9a211ca36f718441f089a88c", data=text.encode("utf-8"))
-    status = t.json()['message']
-    print(status)
-
-
-def feedback(text, case='M'):
-    print("->【", text + ' 】')
-    flag = False
-    # return
-    # text = "[测试]\n" + text
-    qq_status, e = push_QQ(text, case)
-    if qq_status == -1:
-        print("请求失败---Qmsg服务器异常")
-        flag = True
-    elif qq_status is False:
-        print("推送失败，进入coolPush推送")
-        flag = True
-    else:
-        print("QQ推送成功")
-
-    if flag:
-        weChatPush(text, e)
-
-
 def originInfo():
     url = 'https://bgapi.54heb.com/regiment?page=1&rows=100&keyword=&oid=100475653&leagueStatus=&goHomeStatus=&memberCardStatus=&isPartyMember=&age_type=&ageOption=&isAll='
     header = {'Accept': 'application/json, text/plain, */*',
@@ -236,7 +181,7 @@ def originInfo():
     # print(soup.json())
     if soup.json()['msg'] != 'success':
         print(soup.json()['msg'])
-        feedback(soup.json()['msg'])
+        feedback.feedback(soup.json()['msg'])
         exit()
 
     for sa in soup.json()['data']['data']:
@@ -303,7 +248,7 @@ def processInfo():
         message += member
         message += "共计{}个\n".format(len(l))
         message += "-----------------------\n请宿舍长们及时督促！"
-        feedback(message, "G")
+        feedback.feedback(message, "G", qq=targetQQ)
 
 
 if __name__ == '__main__':

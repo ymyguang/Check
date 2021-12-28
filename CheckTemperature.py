@@ -3,10 +3,14 @@ import urllib.parse
 from datetime import datetime as da
 import time
 from math import ceil
-
+import feedback
 import ddddocr
 import requests
 from bs4 import BeautifulSoup
+
+
+targetQQ = 708227196
+targetQQ = str(targetQQ)
 
 set_name = set()
 maxPage = 99
@@ -59,63 +63,6 @@ header = {
     'Accept-Encoding': 'gzip, deflate',
     'Accept-Language': 'en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7'
 }
-
-
-def push_QQ(text, case):
-    # -1是请求异常
-    # false是推送异常
-    print("-- 进入QmsgPUSH --")
-
-    qq = {
-        'M': 2096304869,
-        "G": 1042333099
-        # 以下是宿舍
-        # "G": 708227196
-    }
-    way = {
-        "M": "send",
-        "G": "group"
-    }
-    params1 = {
-        "msg": text,
-        "qq": qq[case],
-    }
-    url = "https://qmsg.zendee.cn/" + way[case] + "/d105a92ecd34dab1427db4dc4936e339"
-
-    try:
-        c = requests.get(url=url, params=params1)
-        status = c.json()['success']
-        print(status)
-        return status, c.text
-    except Exception as e:
-        print(e)
-        return -1, e
-
-
-def weChatPush(text, e):
-    print("-- 进入WeCharPUSH --")
-    text = "QQ推送失败\n" + "异常信息：" + str(e) + "\n" + text
-    text = str(text)
-    t = requests.post("https://push.xuthus.cc/ww/ce4e2dfe9a211ca36f718441f089a88c", data=text.encode("utf-8"))
-    status = t.json()['message']
-    print(status)
-
-
-def feedback(text, case='M'):
-    print("->【", text + ' 】')
-    flag = False
-    qq_status, e = push_QQ(text, case)
-    if qq_status == -1:
-        print("请求失败---Qmsg服务器异常")
-        flag = True
-    elif qq_status is False:
-        print("推送失败，进入coolPush推送")
-        flag = True
-    else:
-        print("QQ推送成功")
-
-    if flag:
-        weChatPush(text, e)
 
 
 # 获取cookie和验证码
@@ -233,12 +180,12 @@ def generateMess():
         if f % pageNum == 0:  # 满足一页的个数，就推送
             message += "\n🌻🌻【第{}页，共{}页】🌻🌻".format(str(currentPage), totalPage)
             currentPage += 1
-            feedback(message, "G")
+            feedback.feedback(message, "G", qq=targetQQ)
             message = '叮叮叮，赶紧填体温📣📣📣 \n'
             time.sleep(6)  # 5秒内不能连续推送
     if f % pageNum != 0:  # 不是pageNum倍数的情况
         message += "\n🌻🌻【第{}页，共{}页】🌻🌻".format(str(currentPage), totalPage)
-        feedback(message, "G")
+        feedback.feedback(message, "G", qq=targetQQ)
 
 
 if __name__ == '__main__':
