@@ -1,9 +1,9 @@
 import requests
-
+import feedback
 
 def recall(id):
     id = str(id)
-    url = "http://192.168.80.130:5700/delete_msg?message_id=" + id
+    url = feedback.IP + "/delete_msg?message_id=" + id
     print(url)
     a = requests.get(url)
     print(a.text)
