@@ -59,13 +59,17 @@ def getUrl():
 
 
 def getId():
-    c = requests.get("http://xscfw.hebust.edu.cn/evaluate/survey/surveyList", headers=header).text
-    soup = BeautifulSoup(c, 'html.parser')
     now = da.now()
-    current_time = now.strftime("%Y年%m月%d日健康日报")
+    current_time = now.strftime("%Y-%#m-%#d")
+    c = requests.post("http://xscfw.hebust.edu.cn/evaluate/survey/surveyList", headers=header,
+                      data="surveyCX=" + str(current_time) + "%E5%81%A5%E5%BA%B7%E6%97%A5%E6%8A%A5&typeCX=-1&pageNo=1").text
+    soup = BeautifulSoup(c, 'html.parser')
+    # print(current_time)
+    # print(soup)
+    current_time += "健康日报"
     for tr in soup.findAll('tbody')[0].findAll('tr'):
         res = tr.a
-        if current_time == res['title']:
+        if current_time in res['title']:
             Lid = res['href']
             print(res['title'], "->", Lid)
             return 'http://xscfw.hebust.edu.cn/evaluate/survey/' + Lid
@@ -132,7 +136,7 @@ def generateMess():
     f = 0
     if len(set_name) == pageNum:
         return
-    message = "叮叮叮，赶紧填体温📣📣📣 \n"
+    message = "叮，赶紧填体温📣 \n"
     totalPage = str(ceil(len(set_name) / pageNum))
     currentPage = 1
     recall.action()
@@ -141,13 +145,14 @@ def generateMess():
         message += e + " "
         message += " @at={}@ \n".format(qq_dict[e])
         if f % pageNum == 0:  # 满足一页的个数，就推送
-            message += "\n🌻🌻【第{}页，共{}页】🌻🌻".format(str(currentPage), totalPage)
+            message += "\n【第{}页，共{}页】\nhttp://xscfw.hebust.edu.cn/survey/index.action".format(str(currentPage),
+                                                                                              totalPage)
             currentPage += 1
             feedback.feedback(message, "G", qq=targetQQ)
-            message = '叮叮叮，赶紧填体温📣📣📣 \n'
+            message = '叮，赶紧填体温📣 \n'
             time.sleep(6)  # 5秒内不能连续推送
     if f % pageNum != 0:  # 不是pageNum倍数的情况
-        message += "\n🌻🌻【第{}页，共{}页】🌻🌻".format(str(currentPage), totalPage)
+        message += "\n【第{}页，共{}页】".format(str(currentPage), totalPage)
         feedback.feedback(message, "G", qq=targetQQ)
 
 
