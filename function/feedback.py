@@ -1,5 +1,5 @@
 import requests
-from function import properties
+import properties
 
 IP = properties.IP
 path = properties.filepath
@@ -97,3 +97,4 @@ def feedback(text, case='M', qq=0):
 
         if flag:
             weChatPush(text, e)
+    print("退出推送函数")

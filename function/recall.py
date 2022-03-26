@@ -1,7 +1,5 @@
-import os
-import sys
 import requests
-from function import properties
+import properties
 
 path = properties.filepath
 

@@ -1,4 +1,7 @@
 import datetime
+import os
+import re
+import sys
 import urllib.parse
 from datetime import datetime as da
 import time
@@ -6,13 +9,13 @@ from math import ceil
 import ddddocr
 import requests
 from bs4 import BeautifulSoup
+from function import feedback, recall
+import properties
 
-from function import properties, feedback, recall
-
-# 1042333099 班级群
 targetQQ = properties.targetQQ
 qq_dict = properties.qq_dict
-set_name = set()
+# 键：学号； 值：姓名
+_map = dict()
 maxPage = 99
 
 header = {
@@ -29,6 +32,8 @@ header = {
 
 # 获取cookie和验证码
 def tryLogin():
+    user = properties.user
+    password = properties.password
     r = requests.get('http://xscfw.hebust.edu.cn/evaluate/verifyCode', stream=True)
     cookie = str(r.headers['Set-Cookie']).split(" ")[0]
     header['Cookie'] = cookie
@@ -37,7 +42,7 @@ def tryLogin():
     res = ocr.classification(r.content)
     print("cookie:{}    verify:{}".format(cookie, res))
     r = requests.post("http://xscfw.hebust.edu.cn/evaluate/evaluate", headers=header,
-                      data="username=xxxyhaolei&password=Haolei2021l19.&verifyCode=" + urllib.parse.quote(res))
+                      data="username={}&password={}&verifyCode=".format(user, password) + urllib.parse.quote(res))
 
 
 # 使cookie生效 (登陆)
@@ -60,19 +65,29 @@ def getUrl():
 
 def getId():
     now = da.now()
-    current_time = now.strftime("%Y-%#m-%#d")
+    if os.name == 'posix':
+        print("Linux格式")
+        current_time = now.strftime("%Y-%-m-%-d")  # Linux获取时间
+    else:
+        print("Windows格式")
+        current_time = now.strftime("%Y-%#m-%#d")
+
+    # current_time = '2022-3-15'
     c = requests.post("http://xscfw.hebust.edu.cn/evaluate/survey/surveyList", headers=header,
-                      data="surveyCX=" + str(current_time) + "%E5%81%A5%E5%BA%B7%E6%97%A5%E6%8A%A5&typeCX=-1&pageNo=1").text
+                      data="surveyCX=" + str(
+                          current_time) + "%E5%81%A5%E5%BA%B7%E6%97%A5%E6%8A%A5&typeCX=-1&pageNo=1").text
     soup = BeautifulSoup(c, 'html.parser')
-    # print(current_time)
-    # print(soup)
     current_time += "健康日报"
     for tr in soup.findAll('tbody')[0].findAll('tr'):
         res = tr.a
-        if current_time in res['title']:
-            Lid = res['href']
-            print(res['title'], "->", Lid)
-            return 'http://xscfw.hebust.edu.cn/evaluate/survey/' + Lid
+        try:
+            if current_time in res['title']:
+                Lid = res['href']
+                print(res['title'], "->", Lid)
+                return 'http://xscfw.hebust.edu.cn/evaluate/survey/' + Lid
+        except Exception as e:
+            print("提取数据时，产生异常")
+            print(e)
 
 
 # 登陆成功后（cookie生效）获取原始信息
@@ -83,25 +98,28 @@ def getInfo(page):
     params = {
         "typeCX": 0,  # 未完成0，已完成1
         "pageNo": page,
-        "classCX": "软件L194"  # 班级号
+        # "classCX": "软件L194"  # 班级号
     }
     c = requests.post(url=getId(), params=params, headers=header).text
-
+    # print(c)
     # 获取maxPage数据
     index = str(c).find("maxPage")
     if index == -1:  # 无信息
         print("全部填报完成")
         maxPage = 0
     else:
-        maxPage = int(c[index + 10])
+        maxPage = re.findall(r'var maxPage = (.*);', c)[0]
+        # print(maxPage)
+        # maxPage = 1
     return c
 
 
+# 登陆验证
 def isOk():
     params = {
-        "typeCX": 0,
-        "pageNo": 1,
-        "classCX": "软件L194"
+        "typeCX": 0,  # 未完成0，已完成1
+        "pageNo": 0,
+        "classCX": "电信L201"  # 班级号
     }
     c = requests.post(url=getUrl(), params=params, headers=header).text
     # 检查cookie
@@ -125,34 +143,51 @@ def process(index):
 
         for i in tt:
             sin = i.split("\n")[-6]
-            set_name.add(sin)
-            print(sin)
+            number = i.split("\n")[-7]
+            # 维护学号信息
+            _map[number] = sin
+            # print(number,sin)
     except():
         pass
 
 
+# 学号判断QQ
+def getQQ(name, number):
+    QQ = None
+    if number in qq_dict:
+        QQ = qq_dict[number]
+    if QQ is not None:
+        return " @at={}@ \n".format(QQ)
+    else:
+        return "(找不到此人对应QQ，无法艾特,请班委督导)\n"
+
+
 def generateMess():
-    pageNum = 8  # at的总个数
+    pageNum = 11  # at的总个数
     f = 0
-    if len(set_name) == pageNum:
+    if len(_map) == pageNum:
         return
-    message = "叮，赶紧填体温📣 \n"
-    totalPage = str(ceil(len(set_name) / pageNum))
+    message = "以下同学抓紧时间填报体温！ \n"
+    totalPage = str(ceil(len(_map) / pageNum))
     currentPage = 1
-    recall.action()
-    for e in set_name:
+    for index in range(len(_map)):
         f += 1  # 记录本次推送at的个数
-        message += e + " "
-        message += " @at={}@ \n".format(qq_dict[e])
+        number = list(_map)[index]
+        name = list(_map.values())[index]
+        message += name + " " + number + "  "
+        message += getQQ(name, number)
         if f % pageNum == 0:  # 满足一页的个数，就推送
-            message += "\n【第{}页，共{}页】\nhttp://xscfw.hebust.edu.cn/survey/index.action".format(str(currentPage),
-                                                                                              totalPage)
+            message += "\n【第{}页，共{}页】--共{}人\nhttp://xscfw.hebust.edu.cn/survey/index.action".format(str(currentPage),
+                                                                                                    totalPage,
+                                                                                                    len(_map))
             currentPage += 1
             feedback.feedback(message, "G", qq=targetQQ)
-            message = '叮，赶紧填体温📣 \n'
+            message = '以下同学抓紧时间填报体温！ \n'
             time.sleep(6)  # 5秒内不能连续推送
     if f % pageNum != 0:  # 不是pageNum倍数的情况
-        message += "\n【第{}页，共{}页】".format(str(currentPage), totalPage)
+        message += "\n【第{}页，共{}页】--共{}人\nhttp://xscfw.hebust.edu.cn/survey/index.action".format(str(currentPage),
+                                                                                                totalPage,
+                                                                                                len(_map))
         feedback.feedback(message, "G", qq=targetQQ)
 
 
@@ -161,22 +196,42 @@ if __name__ == '__main__':
     print(da.now())
     print("------------------------------------------------")
     login()
-    recall.action()
     for i in range(1, 100):
         print("################################################")
         process(i)
+        print("第{}页，处理完成".format(i))
         if i == maxPage or maxPage == 0:
             break
-    generateMess()
     print("------------------------------------------------")
+    print("未填报同学{}个".format(len(_map)))
+    # for _ in _map.values():
+    #     print(_)
 
-    # i = 0
-    # for e in qq_dict:
-    #     i += 1
-    #     if i > 13:
-    #         break
-    #     else:
-    #         set_name.add(e)
-    # print(len(set_name))
-    # print(set_name)
-    # generateMess()
+    # exit()
+    a = sys.argv[-1]
+    print(a)
+    if a == "check":
+        if len(_map) == 0:
+            day = datetime.datetime.now().date()
+            day = str(day) + "\n"
+            with open("./flag.txt", 'r') as reader:
+                numbers = reader.readlines()
+                flag = str(numbers[-1])
+                reader.close()
+            print("day:{}flag:{}".format(day, flag))
+            if day != flag:
+                print("进入通知")
+                recall.action()
+                feedback.feedback("全部填写完成(此消息自动发送，无需回复)   @at={}@".format(properties.teacher), "G", qq=targetQQ)
+                # 通知完成后，写入标记。防止通知失败情况下，直接写入，导致的无消息提醒。
+                with open("./flag.txt", 'w') as reader:
+                    reader.write(str(day))
+                    print("写入完毕：{}".format(day))
+                    reader.close()
+            else:
+                print("今日已推送")
+        else:
+            print("未填报完成")
+    else:
+        recall.action()
+        generateMess()
