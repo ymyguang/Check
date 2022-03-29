@@ -14,6 +14,7 @@ import properties
 
 targetQQ = properties.targetQQ
 qq_dict = properties.qq_dict
+condition = properties.condition
 # 键：学号； 值：姓名
 _map = dict()
 maxPage = 99
@@ -141,11 +142,18 @@ def process(index):
         tt = str(t).split("未完成")
         tt.pop()
 
-        for i in tt:
-            sin = i.split("\n")[-6]
-            number = i.split("\n")[-7]
-            # 维护学号信息
-            _map[number] = sin
+        for _ in tt:
+            _ = _.split("\n")
+            sin = _[-6]  # 姓名
+            number = _[-7]  # 学号
+            _class = _[-5]
+            # 没有条件直接加入字典
+            if condition is None:
+                _map[number] = sin
+            # 有条件-> 判断班级类别
+            else:
+                if _class == condition:
+                    _map[number] = sin
             # print(number,sin)
     except():
         pass
@@ -165,7 +173,7 @@ def getQQ(name, number):
 def generateMess():
     pageNum = 11  # at的总个数
     f = 0
-    if len(_map) == pageNum:
+    if len(_map) == 0:
         return
     message = "以下同学抓紧时间填报体温！ \n"
     totalPage = str(ceil(len(_map) / pageNum))
@@ -233,5 +241,5 @@ if __name__ == '__main__':
         else:
             print("未填报完成")
     else:
-        recall.action()
         generateMess()
+        recall.action()
