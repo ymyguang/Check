@@ -85,7 +85,7 @@ def getId():
         print("Windows格式")
         current_time = now.strftime("%Y-%#m-%#d")
 
-    current_time = '2022-3-30'
+    # current_time = '2022-3-30'
     c = requests.post("http://xscfw.hebust.edu.cn/evaluate/survey/surveyList", headers=header,
                       data="surveyCX=" + str(
                           current_time) + "%E5%81%A5%E5%BA%B7%E6%97%A5%E6%8A%A5&typeCX=-1&pageNo=1").text
