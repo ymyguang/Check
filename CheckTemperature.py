@@ -74,7 +74,7 @@ def getId():
         print("Windows格式")
         current_time = now.strftime("%Y-%#m-%#d")
 
-    # current_time = '2022-3-15'
+    # current_time = '2022-3-30'
     c = requests.post("http://xscfw.hebust.edu.cn/evaluate/survey/surveyList", headers=header,
                       data="surveyCX=" + str(
                           current_time) + "%E5%81%A5%E5%BA%B7%E6%97%A5%E6%8A%A5&typeCX=-1&pageNo=1").text
@@ -176,39 +176,12 @@ def getQQ(name, number):
         return "(找不到此人对应QQ，无法艾特,请班委督导)\n"
 
 
-# def generateMess():
-#     pageNum = 11  # at的总个数
-#     f = 0
-#     if len(_map) == 0:
-#         return
-#     message = "以下同学抓紧时间填报体温！ \n"
-#     totalPage = str(ceil(len(_map) / pageNum))
-#     currentPage = 1
-#     for index in range(len(_map)):
-#         f += 1  # 记录本次推送at的个数
-#         number = list(_map)[index]
-#         name = list(_map.values())[index]
-#         message += name + " " + number + "  "
-#         message += getQQ(name, number)
-#         if f % pageNum == 0:  # 满足一页的个数，就推送
-#             message += "\n【第{}页，共{}页】--共{}人\nhttp://xscfw.hebust.edu.cn/survey/index.action".format(str(currentPage),
-#                                                                                                     totalPage,
-#                                                                                                     len(_map))
-#             currentPage += 1
-#             feedback.feedback(message, "G", qq=targetQQ)
-#             message = '以下同学抓紧时间填报体温！ \n'
-#             time.sleep(6)  # 5秒内不能连续推送
-#     if f % pageNum != 0:  # 不是pageNum倍数的情况
-#         message += "\n【第{}页，共{}页】--共{}人\nhttp://xscfw.hebust.edu.cn/survey/index.action".format(str(currentPage),
-#                                                                                                 totalPage,
-#                                                                                                 len(_map))
-#         feedback.feedback(message, "G", qq=targetQQ)
 def generateMess():
     if len(_map) == 0:
         return
     material = []
     material_len = 0
-    pageNum = 11  # at的总个数
+    pageNum = 180  # at的总个数
     for _ in _map:
         material.append(_ + "班")
         for i in _map.get(_):
@@ -218,7 +191,7 @@ def generateMess():
     # print(material)
     f = 0
     currentPage = 1
-    message = '以下同学抓紧时间填报体温~\n----------------------'
+    message = '以下同学抓紧时间填报体温~\n----------------------\n'
     totalPage = str(ceil(material_len / pageNum))
     for elem in material:
         if '班' in elem:
@@ -233,16 +206,18 @@ def generateMess():
             message += "    " + name + getQQ(name, number)
 
         if f % pageNum == 0 and flag == 1:  # 满足一页的个数，就推送
-            message += "\n【第{}页，共{}页】--共{}人\nhttp://xscfw.hebust.edu.cn/survey/index.action".format(
+            message += "\n【第{}页，共{}页】--共{}人".format(
                 str(currentPage),
                 totalPage,
                 material_len)
             currentPage += 1
             feedback.feedback(message, "G", qq=targetQQ)
-            message = '以下同学抓紧时间填报体温~\n----------------------'
+            time.sleep(3)
+            # message = '以下同学抓紧时间填报体温~\n----------------------\n'
+            message = ''
 
     if f % pageNum != 0:  # 不是pageNum倍数的情况
-        message += "\n【第{}页，共{}页】--共{}人\nhttp://xscfw.hebust.edu.cn/survey/index.action".format(
+        message += "\n【第{}页，共{}页】--共{}人".format(
             str(currentPage),
             totalPage,
             material_len)
@@ -289,5 +264,6 @@ if __name__ == '__main__':
         else:
             print("未填报完成")
     else:
-        # recall.action()
+        recall.action()
         generateMess()
+        feedback.feedback("填写地址：http://xscfw.hebust.edu.cn/survey/index.action", "G", qq=targetQQ)
