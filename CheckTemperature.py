@@ -15,6 +15,17 @@ import properties
 targetQQ = properties.targetQQ
 qq_dict = properties.qq_dict
 condition = properties.condition
+dulDic = {
+    '19L0751167': "1258128061",
+    '19L0751197': "2363299276",
+    "19L0751051": '2797403895',
+    "19L0751147": "1149487811",
+    "17L0802120": "1115234075",
+    "19L0752173": "2248278179",
+    "19L0751199": "1394668543",
+    "19L0751074": "3165217896"
+}
+
 # 键：学号； 值：姓名
 _map = {}
 
@@ -112,7 +123,7 @@ def getInfo(page):
     else:
         maxPage = re.findall(r'var maxPage = (.*);', c)[0]
         # print(maxPage)
-        # maxPage = 1
+        # maxPage = 30
     return c
 
 
@@ -167,13 +178,19 @@ def process(index):
 
 # 学号判断QQ
 def getQQ(name, number):
+    dulName = ['王鑫', '吕小龙', '张康', '刘金鹏']
     QQ = None
-    if number in qq_dict:
-        QQ = qq_dict[number]
+    # 重名，按照学号查询
+    if name in dulName:
+        QQ = dulDic[number]
+    # 不重名用姓名查询
+    elif name in qq_dict:
+        QQ = qq_dict[name]
+
     if QQ is not None:
         return " @at={}@ \n".format(QQ)
     else:
-        return "(找不到此人对应QQ，无法艾特,请班委督导)\n"
+        return "(找不到对应QQ,请班委督导)\n"
 
 
 def generateMess():
@@ -181,7 +198,7 @@ def generateMess():
         return
     material = []
     material_len = 0
-    pageNum = 180  # at的总个数
+    pageNum = 80  # at的总个数
     for _ in _map:
         material.append(_ + "班")
         for i in _map.get(_):
@@ -191,11 +208,11 @@ def generateMess():
     # print(material)
     f = 0
     currentPage = 1
-    message = '以下同学抓紧时间填报体温~\n----------------------\n'
+    message = '以下同学抓紧时间填报体温~'
     totalPage = str(ceil(material_len / pageNum))
     for elem in material:
         if '班' in elem:
-            message += "\n【" + elem + '】\n'
+            message += "\n【" + elem + '】\n-------------------------\n'
             flag = 0
         else:
             flag = 1
@@ -212,7 +229,7 @@ def generateMess():
                 material_len)
             currentPage += 1
             feedback.feedback(message, "G", qq=targetQQ)
-            time.sleep(3)
+            time.sleep(10)
             # message = '以下同学抓紧时间填报体温~\n----------------------\n'
             message = ''
 
@@ -222,6 +239,7 @@ def generateMess():
             totalPage,
             material_len)
         feedback.feedback(message, "G", qq=targetQQ)
+    feedback.feedback("填写地址：http://xscfw.hebust.edu.cn/survey/index.action", "G", qq=targetQQ)
 
 
 if __name__ == '__main__':
@@ -266,4 +284,3 @@ if __name__ == '__main__':
     else:
         recall.action()
         generateMess()
-        feedback.feedback("填写地址：http://xscfw.hebust.edu.cn/survey/index.action", "G", qq=targetQQ)
