@@ -215,7 +215,7 @@ def generateMess():
     totalPage = str(ceil(material_len / pageNum))
     for elem in material:
         if '班' in elem:
-            message += "\n【" + elem + '】\n-------------------------\n'
+            message += "\n■【" + elem + '】\n'
             flag = 0
         else:
             flag = 1
@@ -223,7 +223,7 @@ def generateMess():
             t = elem.split("|")
             name = t[0]
             number = t[1]
-            message += "    " + name + getQQ(name, number)
+            message += "➩" + name + getQQ(name, number)
 
         if f % pageNum == 0 and flag == 1:  # 满足一页的个数，就推送
             message += "\n【第{}页，共{}页】--共{}人".format(
