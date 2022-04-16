@@ -45,5 +45,15 @@ ORDER BY `time` DESC LIMIT 0,{}
     print(nameSet)
     return nameSet
 
+def getOrderClass(start,end):
+    sql = """SELECT `class` ,COUNT(`class`)
+    FROM Temperature
+    WHERE `time` BETWEEN "{}" AND "{}"
+    GROUP BY `class`
+    ORDER BY COUNT(`class`) DESC""".format(start, end)
+    cursor.execute(sql)
+    result = cursor.fetchall()
+    return result
+
 def close_sql():
     conn.close()
