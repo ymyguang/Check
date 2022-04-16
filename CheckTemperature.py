@@ -11,6 +11,7 @@ import requests
 from bs4 import BeautifulSoup
 from function import feedback, recall
 import properties
+from function import interactedSQL
 
 targetQQ = properties.targetQQ
 qq_dict = properties.qq_dict
@@ -25,7 +26,7 @@ dulDic = {
     "19L0751199": "1394668543",
     "19L0751074": "3165217896"
 }
-
+_name = []
 # 键：学号； 值：姓名
 _map = {}
 
@@ -85,7 +86,7 @@ def getId():
         print("Windows格式")
         current_time = now.strftime("%Y-%#m-%#d")
 
-    # current_time = '2022-3-30'
+    # current_time = '2022-4-16'
     c = requests.post("http://xscfw.hebust.edu.cn/evaluate/survey/surveyList", headers=header,
                       data="surveyCX=" + str(
                           current_time) + "%E5%81%A5%E5%BA%B7%E6%97%A5%E6%8A%A5&typeCX=-1&pageNo=1").text
@@ -123,7 +124,7 @@ def getInfo(page):
     else:
         maxPage = re.findall(r'var maxPage = (.*);', c)[0]
         # print(maxPage)
-        # maxPage = 30
+        # maxPage = 3
     return c
 
 
@@ -157,6 +158,7 @@ def process(index):
         for _ in tt:
             _ = _.split("\n")
             sin = _[-6]  # 姓名
+            _name.append(sin)
             number = _[-7]  # 学号
             _grade = _[-5]
             _class = _[-2]
@@ -165,6 +167,7 @@ def process(index):
                 if _class not in _map.keys():
                     _map[_class] = []
                 _map[_class].append({'name': sin, 'number': number})
+
             # 有条件-> 判断班级类别
             else:
                 if _grade == condition:
@@ -239,7 +242,19 @@ def generateMess():
             totalPage,
             material_len)
         feedback.feedback(message, "G", qq=targetQQ)
-    feedback.feedback("填写地址：http://xscfw.hebust.edu.cn/survey/index.action", "G", qq=targetQQ)
+    # 生成最后10人
+
+    date = datetime.date.today()
+    lastPeople = interactedSQL.getNumberPeople(10, date)
+    message_pro = ""
+    # 若找到就生成
+    if lastPeople:
+        message_pro = "\n\n============\n【昨日最后10人】\n"
+        for _ in lastPeople:
+            _ = _.split("|")
+            message_pro += "★" + _[0] + "班" + '-' * 2 + _[1] + "★\n"
+    feedback.feedback("填写地址：http://xscfw.hebust.edu.cn/survey/index.action{}".format(message_pro),
+                      "G", qq=targetQQ)
 
 
 if __name__ == '__main__':
@@ -254,7 +269,7 @@ if __name__ == '__main__':
         if i == maxPage or maxPage == 0:
             break
     print("------------------------------------------------")
-    print("未填报同学{}个".format(len(_map)))
+    print("未填报同学{}个".format(len(_name)))
 
     # exit()
     a = sys.argv[-1]
@@ -284,3 +299,9 @@ if __name__ == '__main__':
     else:
         recall.action()
         generateMess()
+        # 插入数据
+        for _class in _map:
+            for _ in _map[_class]:
+                interactedSQL.insert_people(_['number'], _class, _['name'])
+        print("写入结束")
+        interactedSQL.close_sql()
