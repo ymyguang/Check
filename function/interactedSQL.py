@@ -1,8 +1,10 @@
 import pymysql
 import datetime
+
 conn = pymysql.connect(host='47.94.166.83', user='vip_kuan', passwd='XPcd7tbFNc3HeDNy',
                        db='vip_kuan', charset='utf8')
 cursor = conn.cursor()
+
 
 def insert_people(id, _class, _name):
     sql = """INSERT INTO vip_kuan.Temperature (`id`,`class`,`name`,`time`) 
@@ -37,15 +39,18 @@ ORDER BY `time` DESC LIMIT 0,{}
     print(sql)
     cursor.execute(sql)
     nameSet = set()
-
     result = cursor.fetchall()
     if result is not None:
         for i in result:
+            if (len(nameSet)) == 10:
+                break
             nameSet.add(i[0] + "|" + i[1])
-    print(nameSet)
+    nameSet = list(nameSet)
+    nameSet.sort(reverse=True)
     return nameSet
 
-def getOrderClass(start,end):
+
+def getOrderClass(start, end):
     sql = """SELECT `class` ,COUNT(`class`)
     FROM Temperature
     WHERE `time` BETWEEN "{}" AND "{}"
@@ -55,5 +60,7 @@ def getOrderClass(start,end):
     result = cursor.fetchall()
     return result
 
+
 def close_sql():
     conn.close()
+
