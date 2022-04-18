@@ -245,7 +245,7 @@ def generateMess():
     # 生成最后10人
 
     date = datetime.date.today()
-    lastPeople = interactedSQL.getNumberPeople(10, date)
+    lastPeople = interactedSQL.getNumberPeople(100, date)
     message_pro = ""
     # 若找到就生成
     if lastPeople:

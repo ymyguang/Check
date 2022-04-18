@@ -61,6 +61,10 @@ def getOrderClass(start, end):
     return result
 
 
+def truncateTable():
+    sql = "truncate table vip_kuan.Temperature"
+    cursor.execute(sql)
+
+
 def close_sql():
     conn.close()
-

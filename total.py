@@ -21,3 +21,6 @@ if __name__ == '__main__':
         message += "【" + _[0] + "】 ----- " + str(_[1]) + "次\n"
 
     feedback.feedback(message, "G", qq=targetQQ)
+
+    interactedSQL.truncateTable()
+    interactedSQL.close_sql()
