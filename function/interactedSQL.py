@@ -61,9 +61,10 @@ def getOrderClass(start, end):
     return result
 
 
-def truncateTable():
-    sql = "truncate table vip_kuan.Temperature"
+def truncateTable(data):
+    sql = "delete from Temperature where `time` < '{}'".format(data)
     cursor.execute(sql)
+    conn.commit()
 
 
 def close_sql():

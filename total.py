@@ -22,5 +22,9 @@ if __name__ == '__main__':
 
     feedback.feedback(message, "G", qq=targetQQ)
 
-    interactedSQL.truncateTable()
+    now = datetime.date.today()
+    # input("将要删除！！")
+    # input("将要删除！！")
+    # input("将要删除！！")
+    # interactedSQL.truncateTable(now)
     interactedSQL.close_sql()
