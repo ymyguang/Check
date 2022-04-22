@@ -228,14 +228,15 @@ def generateMess():
     # 生成最后10人
 
     date = datetime.date.today()
-    lastPeople = interactedSQL.getNumberPeople(100, date)
-    message_pro = ""
+    lastPeople = interactedSQL.getNumberPeople(date)
     # 若找到就生成
     if lastPeople:
-        message_pro = "\n\n============\n【昨日最后10人】\n"
+        message_pro = "\n\n============\n【昨日16:00后填报体温名单：】\n"
         for _ in lastPeople:
             _ = _.split("|")
             message_pro += "★" + _[0] + "班" + '-' * 2 + _[1] + "★\n"
+    else:
+        message_pro = "\n昨日没有16:00之后才填报的同学!!!\n大 家 继 续 保 持！"
     feedback.feedback("填写地址：http://xscfw.hebust.edu.cn/survey/index.action{}".format(message_pro),
                       "G", qq=targetQQ)
 

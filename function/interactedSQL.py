@@ -7,7 +7,7 @@ cursor = conn.cursor()
 
 
 def insert_people(id, _class, _name):
-    sql = """INSERT INTO vip_kuan.Temperature (`id`,`class`,`name`,`time`) 
+    sql = """INSERT INTO vip_kuan.liujia (`id`,`class`,`name`,`time`) 
     VALUE ('{}','{}','{}', NOW() )
     """.format(id, _class, _name)
     cursor.execute(sql)
@@ -16,7 +16,7 @@ def insert_people(id, _class, _name):
 
 def getPeopleByTime(start, end, num):
     sql = """SELECT `class` ,`name`,COUNT(`name`)
-FROM Temperature
+FROM liujia
 WHERE `time` BETWEEN "{}" AND "{}"
 GROUP BY `name`
 ORDER BY COUNT(`name`) DESC
@@ -28,22 +28,21 @@ LIMIT 0,{}""".format(start, end, num)
 
 
 # 获取按照时间倒序排列的人员
-def getNumberPeople(num, date):
+def getNumberPeople(date):
     # 前一天
     preDate = date - datetime.timedelta(days=1)
+    preDate = preDate.strftime('%Y-%m-%d 15:59:00')
     sql = '''SELECT `class` ,`name`
-FROM Temperature
+FROM liujia
 where `time` between "{}" and "{}"
-ORDER BY `time` DESC LIMIT 0,{}
-    '''.format(preDate, date, num)
+    '''.format(preDate, date)
     print(sql)
     cursor.execute(sql)
     nameSet = set()
     result = cursor.fetchall()
+
     if result is not None:
         for i in result:
-            if (len(nameSet)) == 10:
-                break
             nameSet.add(i[0] + "|" + i[1])
     nameSet = list(nameSet)
     nameSet.sort(reverse=True)
@@ -52,7 +51,7 @@ ORDER BY `time` DESC LIMIT 0,{}
 
 def getOrderClass(start, end):
     sql = """SELECT `class` ,COUNT(`class`)
-    FROM Temperature
+    FROM liujia
     WHERE `time` BETWEEN "{}" AND "{}"
     GROUP BY `class`
     ORDER BY COUNT(`class`) DESC""".format(start, end)
@@ -62,7 +61,7 @@ def getOrderClass(start, end):
 
 
 def truncateTable(data):
-    sql = "delete from Temperature where `time` < '{}'".format(data)
+    sql = "delete from liujia where `time` < '{}'".format(data)
     cursor.execute(sql)
     conn.commit()
 
