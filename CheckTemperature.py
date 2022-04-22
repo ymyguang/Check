@@ -11,10 +11,12 @@ import requests
 from bs4 import BeautifulSoup
 from function import feedback, recall
 import properties
+from function import interactedSQL
 
 targetQQ = properties.targetQQ
 qq_dict = properties.qq_dict
 condition = properties.condition
+_name = []
 # 键：学号； 值：姓名
 _map = {}
 
@@ -146,6 +148,7 @@ def process(index):
         for _ in tt:
             _ = _.split("\n")
             sin = _[-6]  # 姓名
+            _name.append(sin)
             number = _[-7]  # 学号
             _grade = _[-5]
             _class = _[-2]
@@ -195,8 +198,7 @@ def generateMess():
     totalPage = str(ceil(material_len / pageNum))
     for elem in material:
         if '班' in elem:
-            message += "\n【" + elem + '】\n-------------------------\n'
-
+            message += "\n■【" + elem + '】\n'
             flag = 0
         else:
             flag = 1
@@ -204,7 +206,7 @@ def generateMess():
             t = elem.split("|")
             name = t[0]
             number = t[1]
-            message += "    " + name + getQQ(name, number)
+            message += "➩" + name + getQQ(name, number)
 
         if f % pageNum == 0 and flag == 1:  # 满足一页的个数，就推送
             message += "\n【第{}页，共{}页】--共{}人".format(
@@ -223,7 +225,19 @@ def generateMess():
             totalPage,
             material_len)
         feedback.feedback(message, "G", qq=targetQQ)
-    feedback.feedback("填写地址：http://xscfw.hebust.edu.cn/survey/index.action", "G", qq=targetQQ)
+    # 生成最后10人
+
+    date = datetime.date.today()
+    lastPeople = interactedSQL.getNumberPeople(100, date)
+    message_pro = ""
+    # 若找到就生成
+    if lastPeople:
+        message_pro = "\n\n============\n【昨日最后10人】\n"
+        for _ in lastPeople:
+            _ = _.split("|")
+            message_pro += "★" + _[0] + "班" + '-' * 2 + _[1] + "★\n"
+    feedback.feedback("填写地址：http://xscfw.hebust.edu.cn/survey/index.action{}".format(message_pro),
+                      "G", qq=targetQQ)
 
 
 if __name__ == '__main__':
@@ -238,7 +252,7 @@ if __name__ == '__main__':
         if i == maxPage or maxPage == 0:
             break
     print("------------------------------------------------")
-    print("未填报同学{}个".format(len(_map)))
+    print("未填报同学{}个".format(len(_name)))
 
     # exit()
     a = sys.argv[-1]
@@ -268,3 +282,9 @@ if __name__ == '__main__':
     else:
         recall.action()
         generateMess()
+        # 插入数据
+        for _class in _map:
+            for _ in _map[_class]:
+                interactedSQL.insert_people(_['number'], _class, _['name'])
+        print("写入结束")
+        interactedSQL.close_sql()
