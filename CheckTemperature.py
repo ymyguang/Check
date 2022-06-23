@@ -76,7 +76,7 @@ def getId():
         print("Windows格式")
         current_time = now.strftime("%Y-%#m-%#d")
 
-    # current_time = '2022-3-30'
+    # current_time = '2022-6-13'
     c = requests.post("http://xscfw.hebust.edu.cn/evaluate/survey/surveyList", headers=header,
                       data="surveyCX=" + str(
                           current_time) + "%E5%81%A5%E5%BA%B7%E6%97%A5%E6%8A%A5&typeCX=-1&pageNo=1").text
@@ -102,7 +102,7 @@ def getInfo(page):
     params = {
         "typeCX": 0,  # 未完成0，已完成1
         "pageNo": page,
-        # "classCX": "软件L194"  # 班级号
+        "classCX": "物流191"  # 班级号
     }
     c = requests.post(url=getId(), params=params, headers=header).text
     # print(c)
@@ -184,21 +184,19 @@ def generateMess():
         return
     material = []
     material_len = 0
-    pageNum = 80  # at的总个数
     for _ in _map:
         material.append(_ + "班")
         for i in _map.get(_):
             material.append(str(i['name'] + "|" + i['number']))
             material_len += 1
 
-    # print(material)
     f = 0
-    currentPage = 1
     message = '以下同学抓紧时间填报体温~'
-    totalPage = str(ceil(material_len / pageNum))
+    message += "【共{}人】\n".format(material_len)
+    print(material)
     for elem in material:
         if '班' in elem:
-            message += "\n■【" + elem + '】\n'
+            # message += "\n■【" + elem + '】\n'
             flag = 0
         else:
             flag = 1
@@ -208,37 +206,7 @@ def generateMess():
             number = t[1]
             message += "➩" + name + getQQ(name, number)
 
-        if f % pageNum == 0 and flag == 1:  # 满足一页的个数，就推送
-            message += "\n【第{}页，共{}页】--共{}人".format(
-                str(currentPage),
-                totalPage,
-                material_len)
-            currentPage += 1
-            feedback.feedback(message, "G", qq=targetQQ)
-            time.sleep(10)
-            # message = '以下同学抓紧时间填报体温~\n----------------------\n'
-            message = ''
-
-    if f % pageNum != 0:  # 不是pageNum倍数的情况
-        message += "\n【第{}页，共{}页】--共{}人".format(
-            str(currentPage),
-            totalPage,
-            material_len)
-        feedback.feedback(message, "G", qq=targetQQ)
-    # 生成最后10人
-
-    date = datetime.date.today()
-    lastPeople = interactedSQL.getNumberPeople(date)
-    # 若找到就生成
-    if lastPeople:
-        message_pro = "\n\n============\n【昨日16:00后填报体温名单：】\n"
-        for _ in lastPeople:
-            _ = _.split("|")
-            message_pro += "★" + _[0] + "班" + '-' * 2 + _[1] + "★\n"
-    else:
-        message_pro = "\n昨日没有16:00之后才填报的同学!!!\n大 家 继 续 保 持！"
-    feedback.feedback("填写地址：http://xscfw.hebust.edu.cn/survey/index.action{}".format(message_pro),
-                      "G", qq=targetQQ)
+    feedback.feedback(message + "\n填写地址：http://xscfw.hebust.edu.cn/survey/index.action", "G", qq=targetQQ)
 
 
 if __name__ == '__main__':
@@ -258,6 +226,7 @@ if __name__ == '__main__':
     # exit()
     a = sys.argv[-1]
     print(a)
+    # 填报完成提示
     if a == "check":
         if len(_map) == 0:
             day = datetime.datetime.now().date()
