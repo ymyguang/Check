@@ -1,10 +1,9 @@
-from info import wenFa
+from info import wl
 
 IP = "http://47.94.166.83:5700"
 filepath = "message_id.ini"
 
-profile = wenFa
-
+profile = wl
 targetQQ = profile.targetQQ
 teacher = profile.teacher
 user = profile.user
