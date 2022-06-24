@@ -252,9 +252,3 @@ if __name__ == '__main__':
     else:
         recall.action()
         generateMess()
-        # 插入数据
-        for _class in _map:
-            for _ in _map[_class]:
-                interactedSQL.insert_people(_['number'], _class, _['name'])
-        print("写入结束")
-        interactedSQL.close_sql()
