@@ -5,7 +5,7 @@ IP = properties.IP
 path = properties.filepath
 
 
-def myPush(text, qq, case):
+def myPush(text, qq, case, is_record):
     s = text.replace(" @at=", "[CQ:at,qq=").replace("@", "]")
     url = IP + "/send_group_msg?group_id=" + str(qq) + "&message=" + str(s)
     try:
@@ -15,7 +15,8 @@ def myPush(text, qq, case):
         status = result['status']
         message_id = result['data']['message_id']
         message_id = str(message_id)
-        if case == "G":
+        if case == "G" and is_record:
+            print("record")
             with open(path, 'a') as file:
                 file.write(message_id + "\n")
         print("message_id:" + message_id)
@@ -64,14 +65,14 @@ def weChatPush(text, e):
     print(status)
 
 
-def feedback(text, case='M', qq=0):
+def feedback(text, case='M', qq=0, is_record=True):
     text = str(text)
     print("->【", text + ' 】')
     flag = False
 
     # return
     if qq != 0:
-        status = myPush(text, qq, case)
+        status = myPush(text, qq, case, is_record)
         if status == -1:
             print("请求失败---MyPush服务器异常")
             flag = True
