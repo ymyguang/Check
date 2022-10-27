@@ -2,16 +2,14 @@ import datetime
 import os
 import re
 import sys
+import time
 import urllib.parse
 from datetime import datetime as da
-import time
-from math import ceil
 import ddddocr
 import requests
 from bs4 import BeautifulSoup
 from function import feedback, recall
 import properties
-from function import interactedSQL
 
 targetQQ = properties.targetQQ
 qq_dict = properties.qq_dict
@@ -19,7 +17,7 @@ condition = properties.condition
 _name = []
 # 键：学号； 值：姓名
 _map = {}
-
+web = requests.Session()
 maxPage = 99
 
 header = {
@@ -34,19 +32,25 @@ header = {
 }
 
 
+def sleep(prompt, wait_time=3):
+    # return
+    print("当前休息站：{}".format(prompt))
+    for i in range(wait_time):
+        print("等待时间{}s".format(wait_time - i))
+        time.sleep(1)
+
+
 # 获取cookie和验证码
 def tryLogin():
+    sleep("tryLogin")
     user = properties.user
     password = properties.password
-    r = requests.get('http://xscfw.hebust.edu.cn/evaluate/verifyCode', stream=True)
-    cookie = str(r.headers['Set-Cookie']).split(" ")[0]
-    header['Cookie'] = cookie
-
+    r = web.get('http://xscfw.hebust.edu.cn/evaluate/verifyCode', headers=header, stream=True)
     ocr = ddddocr.DdddOcr()
     res = ocr.classification(r.content)
-    print("cookie:{}    verify:{}".format(cookie, res))
-    r = requests.post("http://xscfw.hebust.edu.cn/evaluate/evaluate", headers=header,
-                      data="username={}&password={}&verifyCode=".format(user, password) + urllib.parse.quote(res))
+    print("verify:{}".format(res))
+    r = web.post("http://xscfw.hebust.edu.cn/evaluate/evaluate", headers=header,
+                 data="username={}&password={}&verifyCode=".format(user, password) + urllib.parse.quote(res))
 
 
 # 使cookie生效 (登陆)
@@ -68,6 +72,7 @@ def getUrl():
 
 
 def getId():
+    sleep("tryLogin")
     now = da.now()
     if os.name == 'posix':
         print("Linux格式")
@@ -76,10 +81,10 @@ def getId():
         print("Windows格式")
         current_time = now.strftime("%Y-%#m-%#d")
 
-    # current_time = '2022-6-13'
-    c = requests.post("http://xscfw.hebust.edu.cn/evaluate/survey/surveyList", headers=header,
-                      data="surveyCX=" + str(
-                          current_time) + "%E5%81%A5%E5%BA%B7%E6%97%A5%E6%8A%A5&typeCX=-1&pageNo=1").text
+    # current_time = '2022-10-28'
+    c = web.post("http://xscfw.hebust.edu.cn/evaluate/survey/surveyList", headers=header,
+                 data="surveyCX=" + str(
+                     current_time) + "%E5%81%A5%E5%BA%B7%E6%97%A5%E6%8A%A5&typeCX=-1&pageNo=1").text
     soup = BeautifulSoup(c, 'html.parser')
     current_time += "健康日报"
     for tr in soup.findAll('tbody')[0].findAll('tr'):
@@ -104,7 +109,8 @@ def getInfo(page):
         "pageNo": page,
         "classCX": "物流191"  # 班级号
     }
-    c = requests.post(url=getId(), params=params, headers=header).text
+    sleep("tryLogin")
+    c = web.post(url=getId(), params=params, headers=header).text
     # print(c)
     # 获取maxPage数据
     index = str(c).find("maxPage")
@@ -125,7 +131,8 @@ def isOk():
         "pageNo": 0,
         "classCX": "电信L201"  # 班级号
     }
-    c = requests.post(url=getUrl(), params=params, headers=header).text
+    sleep("tryLogin")
+    c = web.post(url=getUrl(), params=params, headers=header).text
     # 检查cookie
     if str(c).find("重新") != -1 or str(c).find("正确的用户名") != -1:
         print("登陆失败")
