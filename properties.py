@@ -1,9 +1,9 @@
-from info import wl
+from info import ac20
 
 IP = "http://49.233.159.179:5700"
 filepath = "message_id.ini"
 
-profile = wl
+profile = ac20
 targetQQ = profile.targetQQ
 teacher = profile.teacher
 user = profile.user
