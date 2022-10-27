@@ -498,5 +498,7 @@ qq_dict = {"刘海滨": "18151570871",
 user = "xxxyhaolei"
 password = "Haolei2021l19."
 teacher = str(741694659)
-targetQQ = str(1011088119)
+targetQQ = str(648341697)
 condition = None
+#648341697
+# 1011088119

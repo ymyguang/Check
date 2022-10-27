@@ -1,7 +1,7 @@
 import pymysql
 import datetime
 
-conn = pymysql.connect(host='47.94.166.83', user='vip_kuan', passwd='XPcd7tbFNc3HeDNy',
+conn = pymysql.connect(host='49.233.159.179', user='vip_kuan', passwd='XPcd7tbFNc3HeDNy',
                        db='vip_kuan', charset='utf8')
 cursor = conn.cursor()
 

@@ -17,6 +17,7 @@ targetQQ = properties.targetQQ
 qq_dict = properties.qq_dict
 condition = properties.condition
 _name = []
+web = requests.Session()
 # 键：学号； 值：姓名
 _map = {}
 
@@ -28,33 +29,18 @@ header = {
     'Content-Type': 'application/x-www-form-urlencoded',
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36',
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
-    'Referer': 'http://xscfw.hebust.edu.cn/evaluate/verifyCode?d=1636955535211',
+    'Referer': 'http://xscfw.hebust.edu.cn/evaluate/',
     'Accept-Encoding': 'gzip, deflate',
     'Accept-Language': 'en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7'
 }
 
 
-# 获取cookie和验证码
-def tryLogin():
-    user = properties.user
-    password = properties.password
-    r = requests.get('http://xscfw.hebust.edu.cn/evaluate/verifyCode', stream=True)
-    cookie = str(r.headers['Set-Cookie']).split(" ")[0]
-    header['Cookie'] = cookie
-
-    ocr = ddddocr.DdddOcr()
-    res = ocr.classification(r.content)
-    print("cookie:{}    verify:{}".format(cookie, res))
-    r = requests.post("http://xscfw.hebust.edu.cn/evaluate/evaluate", headers=header,
-                      data="username={}&password={}&verifyCode=".format(user, password) + urllib.parse.quote(res))
-
-
-# 使cookie生效 (登陆)
-def login():
-    tryLogin()
-    # 登陆失败，一直重复
-    while not isOk():
-        tryLogin()
+def sleep(prompt, wait_time=1):
+    # return
+    print("当前休息站：{}".format(prompt))
+    for i in range(wait_time):
+        print("等待时间{}s".format(wait_time - i))
+        time.sleep(1)
 
 
 def getUrl():
@@ -77,9 +63,10 @@ def getId():
         current_time = now.strftime("%Y-%#m-%#d")
 
     # current_time = '2022-3-30'
-    c = requests.post("http://xscfw.hebust.edu.cn/evaluate/survey/surveyList", headers=header,
-                      data="surveyCX=" + str(
-                          current_time) + "%E5%81%A5%E5%BA%B7%E6%97%A5%E6%8A%A5&typeCX=-1&pageNo=1").text
+    sleep("getId")
+    c = web.post("http://xscfw.hebust.edu.cn/evaluate/survey/surveyList", headers=header,
+                 data="surveyCX=" + str(
+                     current_time) + "%E5%81%A5%E5%BA%B7%E6%97%A5%E6%8A%A5&typeCX=-1&pageNo=1").text
     soup = BeautifulSoup(c, 'html.parser')
     current_time += "健康日报"
     for tr in soup.findAll('tbody')[0].findAll('tr'):
@@ -104,7 +91,8 @@ def getInfo(page):
         "pageNo": page,
         # "classCX": "软件L194"  # 班级号
     }
-    c = requests.post(url=getId(), params=params, headers=header).text
+    sleep("getInfo")
+    c = web.post(url=getId(), params=params, headers=header).text
     # print(c)
     # 获取maxPage数据
     index = str(c).find("maxPage")
@@ -118,6 +106,31 @@ def getInfo(page):
     return c
 
 
+# 获取cookie和验证码
+def tryLogin():
+    user = properties.user
+    password = properties.password
+    sleep("tryLogin")
+    # 获取验证码
+    s = web.get('http://xscfw.hebust.edu.cn/evaluate/verifyCode', stream=True, headers=header)
+
+    # 识别验证码
+    ocr = ddddocr.DdddOcr()
+    res = ocr.classification(s.content)
+    print("verify:【{}】".format(res))
+    sleep("tryLogin")
+    r = web.post("http://xscfw.hebust.edu.cn/evaluate/evaluate", headers=header,
+                 data="username={}&password={}&verifyCode=".format(user, password) + urllib.parse.quote(res))
+    print("[INFO]已尝试登陆")
+
+
+# 使cookie生效 (登陆)
+def login():
+    tryLogin()
+    while not isOk():  # 登陆失败，一直重复
+        tryLogin()
+
+
 # 登陆验证
 def isOk():
     params = {
@@ -125,12 +138,14 @@ def isOk():
         "pageNo": 0,
         "classCX": "电信L201"  # 班级号
     }
-    c = requests.post(url=getUrl(), params=params, headers=header).text
+    sleep("检查登陆情况")
+    url = getUrl()
+    c = web.get(url=url, params=params, headers=header).text
     # 检查cookie
     if str(c).find("重新") != -1 or str(c).find("正确的用户名") != -1:
-        print("登陆失败")
+        print("[INFO]登陆失败")
         return False
-    print("登陆成功")
+    print("[INFO]登陆成功")
     return True
 
 
@@ -179,6 +194,20 @@ def getQQ(name, number):
         return "(找不到对应QQ,请班委督导)\n"
 
 
+def select_student_of_time():
+    date = datetime.date.today()
+    lastPeople = interactedSQL.getNumberPeople(date)
+    # 若找到就生成
+    if lastPeople:
+        message_pro = "\n\n============\n【昨日16:00后填报体温名单：】\n"
+        for _ in lastPeople:
+            _ = _.split("|")
+            message_pro += "★" + _[0] + "班" + '-' * 2 + _[1] + "★\n"
+    else:
+        message_pro = "\n昨日没有16:00之后才填报的同学!!!\n大 家 继 续 保 持！"
+    return message_pro
+
+
 def generateMess():
     if len(_map) == 0:
         return
@@ -191,7 +220,6 @@ def generateMess():
             material.append(str(i['name'] + "|" + i['number']))
             material_len += 1
 
-    # print(material)
     f = 0
     currentPage = 1
     message = '以下同学抓紧时间填报体温~'
@@ -216,7 +244,6 @@ def generateMess():
             currentPage += 1
             feedback.feedback(message, "G", qq=targetQQ)
             time.sleep(10)
-            # message = '以下同学抓紧时间填报体温~\n----------------------\n'
             message = ''
 
     if f % pageNum != 0:  # 不是pageNum倍数的情况
@@ -227,17 +254,7 @@ def generateMess():
         feedback.feedback(message, "G", qq=targetQQ)
     # 生成最后10人
 
-    date = datetime.date.today()
-    lastPeople = interactedSQL.getNumberPeople(date)
-    # 若找到就生成
-    if lastPeople:
-        message_pro = "\n\n============\n【昨日16:00后填报体温名单：】\n"
-        for _ in lastPeople:
-            _ = _.split("|")
-            message_pro += "★" + _[0] + "班" + '-' * 2 + _[1] + "★\n"
-    else:
-        message_pro = "\n昨日没有16:00之后才填报的同学!!!\n大 家 继 续 保 持！"
-    feedback.feedback("填写地址：http://xscfw.hebust.edu.cn/survey/index.action{}".format(message_pro),
+    feedback.feedback("填写地址：http://xscfw.hebust.edu.cn/survey/index.action{}".format(select_student_of_time()),
                       "G", qq=targetQQ)
 
 
@@ -270,7 +287,10 @@ if __name__ == '__main__':
             if day != flag:
                 print("进入通知")
                 recall.action()
-                feedback.feedback("全部填写完成(此消息自动发送，无需回复)   @at={}@".format(properties.teacher), "G", qq=targetQQ)
+                feedback.feedback(
+                    "全部填写完成(此消息自动发送)   @at={}@ \n以下是昨日未按时名单【此消息不再撤回！】：\n{}"
+                        .format(properties.teacher, select_student_of_time()), "G",
+                    qq=targetQQ, is_record=False)  # 不进行撤回
                 # 通知完成后，写入标记。防止通知失败情况下，直接写入，导致的无消息提醒。
                 with open("./flag.txt", 'w') as reader:
                     reader.write(str(day))
