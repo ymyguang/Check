@@ -12,6 +12,10 @@ from bs4 import BeautifulSoup
 from function import feedback, recall
 import properties
 
+proxy = {
+    'http': 'http://116.63.188.74:3128'
+}
+
 targetQQ = properties.targetQQ
 qq_dict = properties.qq_dict
 condition = properties.condition
@@ -58,14 +62,14 @@ def tryLogin():
     user = properties.user
     password = properties.password
     sleep("获取验证码")
-    r = web.get('http://xscfw.hebust.edu.cn/evaluate/verifyCode', stream=True, headers=header)
+    r = web.get('http://xscfw.hebust.edu.cn/evaluate/verifyCode', stream=True, headers=header, proxies=proxy)
 
     ocr = ddddocr.DdddOcr()
     res = ocr.classification(r.content)
     print("verify:{}".format(res))
     sleep("准备登陆")
-    r = web.post("http://xscfw.hebust.edu.cn/evaluate/evaluate", headers=header,
-                      data="username={}&password={}&verifyCode=".format(user, password) + urllib.parse.quote(res))
+    r = web.post("http://xscfw.hebust.edu.cn/evaluate/evaluate", headers=header,proxies=proxy,
+                 data="username={}&password={}&verifyCode=".format(user, password) + urllib.parse.quote(res))
 
 
 # 使cookie生效 (登陆)
@@ -97,9 +101,9 @@ def getId():
 
     # current_time = '2022-3-30'
     sleep("getId")
-    c = web.post("http://xscfw.hebust.edu.cn/evaluate/survey/surveyList", headers=header,
-                      data="surveyCX=" + str(
-                          current_time) + "%E5%81%A5%E5%BA%B7%E6%97%A5%E6%8A%A5&typeCX=-1&pageNo=1").text
+    c = web.post("http://xscfw.hebust.edu.cn/evaluate/survey/surveyList", headers=header, proxies=proxy,
+                 data="surveyCX=" + str(
+                     current_time) + "%E5%81%A5%E5%BA%B7%E6%97%A5%E6%8A%A5&typeCX=-1&pageNo=1").text
     soup = BeautifulSoup(c, 'html.parser')
     current_time += "健康日报"
     for tr in soup.findAll('tbody')[0].findAll('tr'):
@@ -125,7 +129,7 @@ def getInfo(page):
         # "classCX": "软件L194"  # 班级号
     }
     sleep("tryLogin")
-    c = web.post(url=getId(), params=params, headers=header).text
+    c = web.post(url=getId(), params=params, headers=header, proxies=proxy).text
     # print(c)
     # 获取maxPage数据
     index = str(c).find("maxPage")
@@ -147,7 +151,7 @@ def isOk():
         "classCX": "电信L201"  # 班级号
     }
     sleep("isOK")
-    c = web.post(url=getUrl(), params=params, headers=header).text
+    c = web.post(url=getUrl(), params=params, headers=header, proxies=proxy).text
     # 检查cookie
     if str(c).find("重新") != -1 or str(c).find("正确的用户名") != -1:
         print("登陆失败")
