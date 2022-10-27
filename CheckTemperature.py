@@ -11,6 +11,9 @@ from bs4 import BeautifulSoup
 from function import feedback, recall
 import properties
 
+proxy = {
+    'http': 'http://116.63.188.74:3128'
+}
 targetQQ = properties.targetQQ
 qq_dict = properties.qq_dict
 condition = properties.condition
@@ -45,11 +48,11 @@ def tryLogin():
     sleep("tryLogin")
     user = properties.user
     password = properties.password
-    r = web.get('http://xscfw.hebust.edu.cn/evaluate/verifyCode', headers=header, stream=True)
+    r = web.get('http://xscfw.hebust.edu.cn/evaluate/verifyCode', headers=header, stream=True,proxies=proxy)
     ocr = ddddocr.DdddOcr()
     res = ocr.classification(r.content)
     print("verify:{}".format(res))
-    r = web.post("http://xscfw.hebust.edu.cn/evaluate/evaluate", headers=header,
+    r = web.post("http://xscfw.hebust.edu.cn/evaluate/evaluate", headers=header,proxies=proxy,
                  data="username={}&password={}&verifyCode=".format(user, password) + urllib.parse.quote(res))
 
 
@@ -82,7 +85,7 @@ def getId():
         current_time = now.strftime("%Y-%#m-%#d")
 
     # current_time = '2022-10-28'
-    c = web.post("http://xscfw.hebust.edu.cn/evaluate/survey/surveyList", headers=header,
+    c = web.post("http://xscfw.hebust.edu.cn/evaluate/survey/surveyList", headers=header,proxies=proxy,
                  data="surveyCX=" + str(
                      current_time) + "%E5%81%A5%E5%BA%B7%E6%97%A5%E6%8A%A5&typeCX=-1&pageNo=1").text
     soup = BeautifulSoup(c, 'html.parser')
@@ -110,7 +113,7 @@ def getInfo(page):
         "classCX": "物流191"  # 班级号
     }
     sleep("tryLogin")
-    c = web.post(url=getId(), params=params, headers=header).text
+    c = web.post(url=getId(), params=params, headers=header,proxies=proxy).text
     # print(c)
     # 获取maxPage数据
     index = str(c).find("maxPage")
@@ -132,7 +135,7 @@ def isOk():
         "classCX": "电信L201"  # 班级号
     }
     sleep("tryLogin")
-    c = web.post(url=getUrl(), params=params, headers=header).text
+    c = web.post(url=getUrl(), params=params, headers=header,proxies=proxy).text
     # 检查cookie
     if str(c).find("重新") != -1 or str(c).find("正确的用户名") != -1:
         print("登陆失败")
