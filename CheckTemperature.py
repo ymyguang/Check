@@ -11,6 +11,7 @@ import requests
 from bs4 import BeautifulSoup
 from function import feedback, recall
 import properties
+from function import interactedSQL
 
 proxy = {
     'http': 'http://116.63.188.74:3128'
@@ -68,7 +69,7 @@ def tryLogin():
     res = ocr.classification(r.content)
     print("verify:{}".format(res))
     sleep("准备登陆")
-    r = web.post("http://xscfw.hebust.edu.cn/evaluate/evaluate", headers=header,proxies=proxy,
+    r = web.post("http://xscfw.hebust.edu.cn/evaluate/evaluate", headers=header, proxies=proxy,
                  data="username={}&password={}&verifyCode=".format(user, password) + urllib.parse.quote(res))
 
 
@@ -139,7 +140,7 @@ def getInfo(page):
     else:
         maxPage = re.findall(r'var maxPage = (.*);', c)[0]
         # print(maxPage)
-        # maxPage = 30
+        # maxPage = 2
     return c
 
 
@@ -225,12 +226,12 @@ def generateMess():
     # print(material)
     f = 0
     currentPage = 1
-    message = '以下同学抓紧时间填报体温~'
+    message = '以下同学抓紧时间填报体温~（10月22日晚，服务器IP被Ban，现网络资源由魏传祥同学提供，特别感谢）'
     totalPage = str(ceil(material_len / pageNum))
     for elem in material:
         if '班' in elem:
-            message += "\n■【" + elem + '】\n'
             flag = 0
+            message += "\n■【" + elem + '】\n'
         else:
             flag = 1
             f += 1
@@ -256,7 +257,19 @@ def generateMess():
             totalPage,
             material_len)
         feedback.feedback(message, "G", qq=targetQQ)
-    feedback.feedback("填写地址：http://xscfw.hebust.edu.cn/survey/index.action", "G", qq=targetQQ)
+    # 生成最后10人
+
+    date = datetime.date.today()
+    lastPeople = interactedSQL.getNumberPeople(150, date)
+    message_pro = ""
+    # 若找到就生成
+    if lastPeople:
+        message_pro = "\n\n============\n【昨日最后10人】\n"
+        for _ in lastPeople:
+            _ = _.split("|")
+            message_pro += "★" + _[0] + "班" + '-' * 2 + _[1] + "★\n"
+    feedback.feedback("填写地址：http://xscfw.hebust.edu.cn/survey/index.action{}".format(message_pro),
+                      "G", qq=targetQQ)
 
 
 if __name__ == '__main__':
@@ -301,3 +314,9 @@ if __name__ == '__main__':
     else:
         recall.action()
         generateMess()
+        # 插入数据
+        for _class in _map:
+            for _ in _map[_class]:
+                interactedSQL.insert_people(_['number'], _class, _['name'])
+        print("写入结束")
+        interactedSQL.close_sql()
